@@ -1,0 +1,9 @@
+<html>
+<body>
+<form method="get" action="/podcasts/download">
+    <input type="hidden" name="feed" value="{{ request.args.get('feed', '') }}">
+    <input type="hidden" name="key" value="{{ request.args.get('key', '') }}">
+    <label>URL: </label><input type="text" name="url">
+</form>
+</body>
+</html>
