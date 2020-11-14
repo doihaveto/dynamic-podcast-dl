@@ -18,7 +18,7 @@ def youtube_dl(url, feed_name):
     yield '<pre>'
     proc = subprocess.Popen(YOUTUBE_DL_OPTIONS + [url], cwd='files', stdout=subprocess.PIPE, stderr=subprocess.PIPE)
     line = b''
-    info = {'metadata': {}}
+    info = {'metadata': {}, 'file': None}
     while True:
         line += proc.stdout.read(1).replace(b'\r', b'\n')
         if not line:
