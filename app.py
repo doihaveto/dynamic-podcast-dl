@@ -3,14 +3,14 @@ import json
 import settings
 import subprocess
 import email.utils
+import urllib.parse
 from lxml import etree
 from flask import Flask, Response, request, render_template
 from datetime import datetime
 from mutagen.id3 import ID3
 from mutagen.mp3 import MP3
-from urllib.parse import urljoin
 
-YOUTUBE_DL_OPTIONS = ['youtube-dl', '-x', '--audio-format', 'mp3', '--audio-quality', '0', '-f', 'best', '--write-info-json']
+YOUTUBE_DL_OPTIONS = ['youtube-dl', '-x', '--audio-format', 'mp3', '-f', 'bestaudio', '--write-info-json', '-o', '%(title).100s-%(id).20s.%(ext)s']
 
 app = Flask(__name__)
 
@@ -52,7 +52,7 @@ def rss_add_file(feed_name, file_info):
         channel = etree.SubElement(rss, 'channel')
         etree.SubElement(channel, 'title').text = feed['title']
     item = etree.SubElement(channel, 'item')
-    etree.SubElement(item, 'link').text = urljoin(settings.MP3_URL, file_info['file'])
+    etree.SubElement(item, 'link').text = urllib.parse.urljoin(settings.MP3_URL, urllib.parse.quote(file_info['file']))
     audio = MP3(f'files/{file_info["file"]}')
     etree.SubElement(item, 'duration').text = str(int(audio.info.length))
     if file_info['metadata'].get('title'):
