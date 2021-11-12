@@ -10,7 +10,7 @@ from datetime import datetime
 from mutagen.id3 import ID3
 from mutagen.mp3 import MP3
 
-YOUTUBE_DL_OPTIONS = ['youtube-dl', '-x', '--audio-format', 'mp3', '-f', 'bestaudio', '--write-info-json', '-o', '%(title).100s-%(id).20s.%(ext)s']
+YOUTUBE_DL_OPTIONS = ['yt-dlp', '-x', '--audio-format', 'mp3', '-f', 'bestaudio', '--no-continue', '--write-info-json', '-o', '%(title).100s-%(id).20s.%(timestamp)s.%(ext)s']
 
 app = Flask(__name__)
 
@@ -32,6 +32,8 @@ def youtube_dl(url, feed_name):
                 info['metadata_file'] = os.path.join('files', line.split('as JSON to:')[1].strip())
             elif 'Destination: ' in line:
                 info['file'] = line.split('Destination: ')[1].strip()
+            elif 'ExtractAudio' in line and 'exists, skipping' in line:
+                info['file'] = line.split('Post-process file ')[1].split(' exists, skipping')[0]
             yield line
             line = b''
     if 'metadata_file' in info:
@@ -41,6 +43,8 @@ def youtube_dl(url, feed_name):
         yield 'Adding to RSS feed... '
         rss_add_file(feed_name, info)
         yield 'done'
+    else:
+        yield 'Unable to locate file'
 
 def rss_add_file(feed_name, file_info):
     feed = settings.FEEDS[feed_name]
@@ -52,7 +56,10 @@ def rss_add_file(feed_name, file_info):
         channel = etree.SubElement(rss, 'channel')
         etree.SubElement(channel, 'title').text = feed['title']
     item = etree.SubElement(channel, 'item')
-    etree.SubElement(item, 'link').text = urllib.parse.urljoin(settings.MP3_URL, urllib.parse.quote(file_info['file']))
+    enclosure = etree.SubElement(item, 'enclosure')
+    enclosure.set('length', '0')
+    enclosure.set('type', 'audio/mpeg')
+    enclosure.set('url', urllib.parse.urljoin(settings.MP3_URL, urllib.parse.quote(file_info['file'])))
     audio = MP3(f'files/{file_info["file"]}')
     etree.SubElement(item, 'duration').text = str(int(audio.info.length))
     if file_info['metadata'].get('title'):
